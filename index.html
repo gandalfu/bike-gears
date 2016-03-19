@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8>
+		<title>My first Three.js app</title>
+		<style>
+			body { margin: 0; }
+			canvas { width: 100%; height: 100% }
+		</style>
+	</head>
+	<body>
+		<script src="js/three.min.js"></script>
+	    <script src="js/OrbitControls.js"></script>
+		<script src="js/underscore-min.js"></script>
+		<script>
+		
+var scene = new THREE.Scene();
+
+var camera = new THREE.PerspectiveCamera( 75, 100, 0.1, 1000 );
+//var camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 1, 1000 );
+//scene.add( camera );
+
+var renderer = new THREE.WebGLRenderer();
+renderer.setSize( window.innerWidth, window.innerHeight );
+document.body.appendChild( renderer.domElement );
+
+var orbit = new THREE.OrbitControls( camera, renderer.domElement );
+orbit.enableZoom = false;
+
+var ambientLight = new THREE.AmbientLight( 0x000000 );
+scene.add( ambientLight );
+
+var xGears = _.range(11,14);
+var yCadences = _.range(40,43);
+const FRONT_GEAR = 50;
+const WHEEL_LENGTH = 2105;
+
+function bikeSpeed(gear, cadence) {
+	return ((FRONT_GEAR / gear ) * cadence * FRONT_GEAR * 60)/100000;
+}
+var vertices = [];
+ _.each(xGears, function(xGear){
+								_.each(yCadences, function(yCadence){
+									var speed = bikeSpeed (xGear, yCadence);
+									var v = new THREE.Vector3( xGear, yCadence, speed );
+									vertices.push(v);
+								});	
+});
+
+function isEdgeVertex(index){
+	return ((index + 1) % xGears.length ) == 0 || 
+	        (index   >= (vertices.length - yCadences.length));
+}
+
+var faces = [];
+_.each(vertices, function(vertex, index){
+	console.log(index);
+	var nextX = index + 1;
+	var topY = index + yCadences.length;
+	var nextTop = topY + 1;
+	
+	console.log(nextX);
+	console.log(topY);
+	console.log(nextTop);
+	
+	if (! isEdgeVertex(index)) {
+		console.log ("Not edge");
+		faces.push(new THREE.Face3(index, nextX, nextTop));
+		faces.push(new THREE.Face3(index, topY, nextTop));
+	} else {
+		console.log ("Edge");
+	}
+});
+
+console.log(vertices);			
+console.log(faces);			
+//***************
+
+//Create a closed wavey loop
+var geometry = new THREE.Geometry();
+geometry.vertices = vertices;
+geometry.faces = faces;
+geometry.computeBoundingSphere();
+
+var material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+
+var surface = new THREE.Mesh( geometry, material );
+
+scene.add( surface );
+
+//***************
+camera.position.z = 50;
+
+function render() {
+	requestAnimationFrame( render );
+	renderer.render( scene, camera );
+}
+render();
+
+		</script>
+	</body>
+</html>
